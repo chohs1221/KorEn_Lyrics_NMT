@@ -193,7 +193,7 @@ torch.cuda.empty_cache()
 # %%
 trainer.train()
 
-model.save_pretrained("checkpoints/best_model")
+model.save_pretrained(f"checkpoints/{args.NAME}")
 
 
 #%%
@@ -201,7 +201,7 @@ wandb.finish()
 
 
 #%%
-model = EncoderDecoderModel.from_pretrained('./checkpoints/best_model')
+model = EncoderDecoderModel.from_pretrained(f'./checkpoints/{args.NAME}')
 model.config.decoder_start_token_id = dec_tokenizer.bos_token_id
 
 input_ids = '안녕하세요'
@@ -209,7 +209,6 @@ print("Input:\n" + 100 * '-')
 print(input_ids)
 outputs = model.generate(torch.tensor([enc_tokenizer.encode(input_ids)]),
                         num_beams=5,
-                        skip_special_tokens=True,
                         num_return_sequences=5,)
 print("Output:\n" + 100 * '-')
 for i, output in enumerate(outputs):
