@@ -24,7 +24,7 @@ from transformers import (
 
 
 #%%
-for name in 'models':
+for name in ('models'):
     os.makedirs(name, exist_ok=True)
 
 
