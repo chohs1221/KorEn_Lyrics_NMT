@@ -24,7 +24,7 @@ from transformers import (
 
 
 #%%
-for name in ('models',):
+for name in ('checkpoints',):
     os.makedirs(name, exist_ok=True)
 
 
@@ -193,7 +193,7 @@ torch.cuda.empty_cache()
 # %%
 trainer.train()
 
-model.save_pretrained("models/best_model")
+model.save_pretrained("checkpoints/best_model")
 
 
 #%%
@@ -201,7 +201,7 @@ wandb.finish()
 
 
 #%%
-model = EncoderDecoderModel.from_pretrained('./models/best_model')
+model = EncoderDecoderModel.from_pretrained('./checkpoints/best_model')
 model.config.decoder_start_token_id = dec_tokenizer.bos_token_id
 
 input_ids = '안녕하세요'
