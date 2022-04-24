@@ -1,12 +1,15 @@
 #%%
 import os
 import random
+import gc
 from typing import Dict, List
 import csv
 
 from easydict import EasyDict as edict
 
 import wandb
+
+import numpy as np
 
 import torch
 
@@ -19,39 +22,67 @@ from transformers import (
     Trainer,
 )
 
+
 #%%
-for name in 'dump':
+for name in 'models':
     os.makedirs(name, exist_ok=True)
 
 
+#%%
+args = edict({'w_project': 'test_project',
+              'w_entity': 'chohs1221',
+              'learning_rate': 5e-5,
+              'batch_size': {'train': 4,
+                             'eval': 4,},
+              'accumulate': 1,
+              'epochs': 10,
+              'seed': 42,
+              'model_path': {'encoder': 'monologg/kobert',
+                            'decoder': 'distilgpt2'},
+              })
+              
+args['NAME'] = ''f'{args.model_path.encoder[-4:]}{args.model_path.decoder[:-4]}_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}'
+print(args.NAME)
 
+
+#%%
+def seed_everything(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)  # type: ignore
+    torch.backends.cudnn.deterministic = True  # type: ignore
+    torch.backends.cudnn.benchmark = True  # type: ignore
+
+seed_everything(args.seed)
 
 
 #%%
 wandb.login()
 
-wandb.init(project = 'test_project', entity = 'chohs1221')
+wandb.init(project = args.w_project, entity = args.w_entity)
 
-# wandb.config.learning_rate = args.learning_rate
-# wandb.config.epochs = args.epochs
-# wandb.config.batch_size = args.batch_size
 
 #%%
 class GPT2Tokenizer(BaseGPT2Tokenizer):
     def build_inputs_with_special_tokens(self, token_ids: List[int], _) -> List[int]:
         return token_ids + [self.eos_token_id]
 
+
 #%%
-enc_tokenizer = KoBertTokenizer.from_pretrained('monologg/kobert')
-dec_tokenizer = GPT2Tokenizer.from_pretrained('distilgpt2')
+enc_tokenizer = KoBertTokenizer.from_pretrained(args.model_path.encoder)
+dec_tokenizer = GPT2Tokenizer.from_pretrained(args.model_path.decoder)
+
 
 # %%
 model = EncoderDecoderModel.from_encoder_decoder_pretrained(
-    'monologg/kobert',
-    'distilgpt2',    
+    args.model_path.encoder,
+    args.model_path.decoder,    
     pad_token_id=dec_tokenizer.bos_token_id
 )
 model.config.decoder_start_token_id = dec_tokenizer.bos_token_id
+
 
 #%%
 class PairedDataset:
@@ -84,11 +115,13 @@ class PairedDataset:
     def __len__(self):
         return len(self.data)
 
+
 #%%
 dataset = PairedDataset.loads('./data/kor2en.csv')
 train_dataset_, valid_dataset_ = PairedDataset.split(dataset)
 print(train_dataset_[0])
 print(valid_dataset_[0])
+
 
 #%%
 class TokenizeDataset:
@@ -107,33 +140,40 @@ class TokenizeDataset:
     def __len__(self):
         return len(self.dataset)
 
+
+#%%
 train_dataset = TokenizeDataset(train_dataset_, enc_tokenizer, dec_tokenizer)
 valid_dataset = TokenizeDataset(valid_dataset_, enc_tokenizer, dec_tokenizer)
 # print(train_dataset[0])
 # print(enc_tokenizer.convert_ids_to_tokens(train_dataset[0]['input_ids']))
 # print(dec_tokenizer.convert_ids_to_tokens(train_dataset[0]['labels']))
 
+
 # %%
-collator = DataCollatorForSeq2Seq(enc_tokenizer, model, max_length = 512)
+collator = DataCollatorForSeq2Seq(enc_tokenizer, model)
 
 arguments = Seq2SeqTrainingArguments(
-    output_dir='dump',
+    output_dir='checkpoints',
     do_train=True,
     do_eval=True,
-    evaluation_strategy="epoch",
-    save_strategy="epoch",
-    num_train_epochs=10,
-    per_device_train_batch_size=4,
-    per_device_eval_batch_size=4,
+
+    num_train_epochs=args.epochs,
+    learning_rate = args.learning_rate,
     warmup_ratio=0.1,
-    gradient_accumulation_steps=1,
-    save_total_limit=5,
+
+    save_strategy="epoch",
+    save_total_limit=2,
+    evaluation_strategy="epoch",
+    load_best_model_at_end=True,
+
+    per_device_train_batch_size=args.batch_size.train,
+    per_device_eval_batch_size=args.batch_size.eval,
+    gradient_accumulation_steps=args.accumulate,
     dataloader_num_workers=1,
     fp16=True,
-    load_best_model_at_end=True,
+
     report_to='wandb',
     run_name='test2'
-
 )
 
 trainer = Trainer(
@@ -144,17 +184,33 @@ trainer = Trainer(
     eval_dataset=valid_dataset
 )
 
+
 #%%
-import gc
 gc.collect()
 torch.cuda.empty_cache()
+
 
 # %%
 trainer.train()
 
-model.save_pretrained("dump/best_model")
+model.save_pretrained("models/best_model")
+
 
 #%%
 wandb.finish()
 
 
+#%%
+model = EncoderDecoderModel.from_pretrained('./models/best_model')
+model.config.decoder_start_token_id = dec_tokenizer.bos_token_id
+
+input_ids = '안녕하세요'
+print("Input:\n" + 100 * '-')
+print(input_ids)
+outputs = model.generate(torch.tensor([enc_tokenizer.encode(input_ids)]),
+                        num_beams=5,
+                        skip_special_tokens=True,
+                        num_return_sequences=5,)
+print("Output:\n" + 100 * '-')
+for i, output in enumerate(outputs):
+  print("{}: {}".format(i, dec_tokenizer.decode(output, skip_special_tokens=True)))
