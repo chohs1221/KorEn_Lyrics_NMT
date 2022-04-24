@@ -1,25 +1,13 @@
 #%%
-import os
 import random
-import gc
-from typing import Dict, List
-import csv
+from typing import List
 
 from easydict import EasyDict as edict
-
-import wandb
-
-import numpy as np
-
-import torch
 
 from lib.tokenization_kobert import KoBertTokenizer
 from transformers import (
     EncoderDecoderModel,
     GPT2Tokenizer as BaseGPT2Tokenizer,
-    DataCollatorForSeq2Seq,
-    Seq2SeqTrainingArguments,
-    Trainer,
 )
 
 
@@ -53,15 +41,18 @@ dec_tokenizer = GPT2Tokenizer.from_pretrained(args.model_path.decoder)
 
 
 #%%
-model = EncoderDecoderModel.from_pretrained('./checkpoints/best_model')
-model.config.decoder_start_token_id = dec_tokenizer.bos_token_id
+model = EncoderDecoderModel.from_pretrained(f'./models/best_model')
 
-input_ids = ''
-print("Input:\n" + 100 * '-')
-print(input_ids)
-outputs = model.generate(torch.tensor([enc_tokenizer.encode(input_ids)]),
-                        num_beams=10,
-                        num_return_sequences=10,)
-print("Output:\n" + 100 * '-')
+input_prompt  = '집 가고 싶다'
+input_ids = enc_tokenizer.encode(input_prompt, return_tensors='pt')
+print(100 * '=' + "\nInput:")
+print(input_prompt)
+outputs = model.generate(input_ids,
+                        num_beams=5,
+                        num_return_sequences=5,
+                        max_length=50,
+                        no_repeat_ngram_size = 2)
+print(50 * '- ' + "\nOutput:")
 for i, output in enumerate(outputs):
   print("{}: {}".format(i, dec_tokenizer.decode(output, skip_special_tokens=True)))
+print(100*'=')

@@ -202,14 +202,17 @@ wandb.finish()
 
 #%%
 model = EncoderDecoderModel.from_pretrained(f'./checkpoints/{args.NAME}')
-model.config.decoder_start_token_id = dec_tokenizer.bos_token_id
 
-input_ids = '안녕하세요'
-print("Input:\n" + 100 * '-')
-print(input_ids)
-outputs = model.generate(torch.tensor([enc_tokenizer.encode(input_ids)]),
+input_prompt  = '집 가고 싶다'
+input_ids = enc_tokenizer.encode(input_prompt, return_tensors='pt')
+print(100 * '=' + "\nInput:")
+print(input_prompt)
+outputs = model.generate(input_ids,
                         num_beams=5,
-                        num_return_sequences=5,)
-print("Output:\n" + 100 * '-')
+                        num_return_sequences=5,
+                        max_length=50,
+                        no_repeat_ngram_size = 2)
+print(50 * '- ' + "\nOutput:")
 for i, output in enumerate(outputs):
   print("{}: {}".format(i, dec_tokenizer.decode(output, skip_special_tokens=True)))
+print(100*'=')
