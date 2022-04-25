@@ -41,7 +41,7 @@ dec_tokenizer = GPT2Tokenizer.from_pretrained(args.model_path.decoder)
 
 
 #%%
-model = EncoderDecoderModel.from_pretrained(f'./models/best_model')
+model = EncoderDecoderModel.from_pretrained(f'./checkpoints/bertdistil_ep10_lr5e-05_122')
 
 input_prompt  = '집 가고 싶다'
 input_ids = enc_tokenizer.encode(input_prompt, return_tensors='pt')

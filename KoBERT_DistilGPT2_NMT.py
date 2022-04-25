@@ -37,11 +37,11 @@ args = edict({'w_project': 'test_project',
               'accumulate': 1,
               'epochs': 10,
               'seed': 42,
-              'model_path': {'encoder': 'monologg/kobert',
+              'model_path': {'encoder': 'monologg/distilkobert',
                             'decoder': 'distilgpt2'},
               })
               
-args['NAME'] = ''f'{args.model_path.encoder[-4:]}{args.model_path.decoder[:-4]}_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}'
+args['NAME'] = ''f'{args.model_path.encoder[-4:]}{args.model_path.decoder[-4:]}_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}'
 print(args.NAME)
 
 
