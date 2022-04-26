@@ -1,5 +1,4 @@
 #%%
-import random
 from typing import List
 
 from easydict import EasyDict as edict
@@ -12,21 +11,10 @@ from transformers import (
 
 
 #%%
-args = edict({'w_project': 'test_project',
-              'w_entity': 'chohs1221',
-              'learning_rate': 5e-5,
-              'batch_size': {'train': 4,
-                             'eval': 4,},
-              'accumulate': 1,
-              'epochs': 10,
-              'seed': 42,
+args = edict({
               'model_path': {'encoder': 'monologg/kobert',
                             'decoder': 'distilgpt2'},
               })
-
-
-args['NAME'] = ''f'{args.model_path.encoder[-4:]}{args.model_path.decoder[:-4]}_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}'
-print(args.NAME)
 
 
 #%%
@@ -41,9 +29,9 @@ dec_tokenizer = GPT2Tokenizer.from_pretrained(args.model_path.decoder)
 
 
 #%%
-model = EncoderDecoderModel.from_pretrained(f'./checkpoints/kobert_gpt2_ep10_lr0.0001_320_fine')
+model = EncoderDecoderModel.from_pretrained(f'./checkpoints/kobert_gpt2_ep15_lr0.0001_384_fine')
 
-input_prompt  = '술이 한 잔 생각 나는 밤 같이 있는 것 같아요'
+input_prompt  = '허세와는 거리가 멀어'
 input_ids = enc_tokenizer.encode(input_prompt, return_tensors='pt')
 print(100 * '=' + "\nInput:")
 print(input_prompt)

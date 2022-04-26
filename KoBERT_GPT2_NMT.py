@@ -43,9 +43,9 @@ args = edict({'w_project': 'test_project',
               })
 
 if args.pretraining:
-    args['NAME'] = f'bert_kogpt2_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}_pre'
+    args['NAME'] = f'kobert_gpt2_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}_pre'
 else:
-    args['NAME'] = f'bert_kogpt2_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}_fine'
+    args['NAME'] = f'kobert_gpt2_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}_fine'
 print(args.NAME)
 
 
