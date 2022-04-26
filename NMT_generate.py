@@ -41,9 +41,9 @@ dec_tokenizer = GPT2Tokenizer.from_pretrained(args.model_path.decoder)
 
 
 #%%
-model = EncoderDecoderModel.from_pretrained(f'./checkpoints/bertgpt2_ep20_lr5e-05_967')
+model = EncoderDecoderModel.from_pretrained(f'./checkpoints/kobert_gpt2_ep10_lr0.0001_320_fine')
 
-input_prompt  = '가지마 가지마 가지마 나는 너를 위해 바보처럼 살아 가는데 너는 어디에 니가 필요한데'
+input_prompt  = '술이 한 잔 생각 나는 밤 같이 있는 것 같아요'
 input_ids = enc_tokenizer.encode(input_prompt, return_tensors='pt')
 print(100 * '=' + "\nInput:")
 print(input_prompt)

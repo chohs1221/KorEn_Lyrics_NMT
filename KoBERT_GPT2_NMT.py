@@ -16,14 +16,10 @@ import torch
 from lib.tokenization_kobert import KoBertTokenizer
 from transformers import (
     EncoderDecoderModel,
-    PreTrainedTokenizerFast as BaseGPT2Tokenizer,
+    GPT2Tokenizer as BaseGPT2Tokenizer,
     DataCollatorForSeq2Seq,
     Seq2SeqTrainingArguments,
     Trainer,
-    GPT2LMHeadModel,
-    DistilBertTokenizer,
-    DistilBertModel,
-    
 )
 
 
@@ -35,20 +31,23 @@ for name in ('checkpoints',):
 #%%
 args = edict({'w_project': 'test_project',
               'w_entity': 'chohs1221',
+              'pretraining': False,
               'learning_rate': 1e-4,
               'batch_size': {'train': 8,
                              'eval': 4,},
               'accumulate': 32,
-              'epochs': 10,
+              'epochs': 15,
               'seed': 42,
-              'model_path': {'encoder': 'distilbert-base-uncased',
-                            'decoder': 'skt/kogpt2-base-v2'},
+              'model_path': {'encoder': 'monologg/distilkobert',
+                            'decoder': 'distilgpt2'},
               })
 
-args['NAME'] = ''f'{args.model_path.encoder[-4:]}{args.model_path.decoder[-4:]}_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}'
+if args.pretraining:
+    args['NAME'] = f'bert_kogpt2_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}_pre'
+else:
+    args['NAME'] = f'bert_kogpt2_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}_fine'
 print(args.NAME)
 
-pretraining = True
 
 #%%
 def seed_everything(seed):
@@ -71,23 +70,27 @@ wandb.run.name = args.NAME
 
 
 #%%
-class PreTrainedTokenizerFast(BaseGPT2Tokenizer):
+class GPT2Tokenizer(BaseGPT2Tokenizer):
     def build_inputs_with_special_tokens(self, token_ids: List[int], _) -> List[int]:
         return token_ids + [self.eos_token_id]
 
 
 #%%
-enc_tokenizer = DistilBertTokenizer.from_pretrained(args.model_path.encoder)
-dec_tokenizer = PreTrainedTokenizerFast.from_pretrained(args.model_path.decoder, bos_token='</s>', eos_token='</s>', unk_token='<unk>', pad_token='<pad>', mask_token='<mask>')
+# enc_tokenizer = KoBertTokenizer.from_pretrained(args.model_path.encoder)
+enc_tokenizer = KoBertTokenizer.from_pretrained('monologg/kobert')
+dec_tokenizer = GPT2Tokenizer.from_pretrained(args.model_path.decoder)
 
 
 # %%
-model = EncoderDecoderModel.from_encoder_decoder_pretrained(
-    args.model_path.encoder,
-    args.model_path.decoder,    
-    pad_token_id=dec_tokenizer.bos_token_id
-)
-model.config.decoder_start_token_id = dec_tokenizer.bos_token_id
+if args.pretraining:
+    model = EncoderDecoderModel.from_encoder_decoder_pretrained(
+        args.model_path.encoder,
+        args.model_path.decoder,    
+        pad_token_id=dec_tokenizer.bos_token_id
+    )
+    model.config.decoder_start_token_id = dec_tokenizer.bos_token_id
+else:
+    model = EncoderDecoderModel.from_pretrained(f'./checkpoints/bertgpt2_ep10_lr0.0001_753_pre')
 
 
 #%%
@@ -102,7 +105,7 @@ class PairedDataset:
     def loads(cls, *file_names):
         data = []
         for file_name in file_names:
-            if pretraining:
+            if args.pretraining:
                 with open(file_name, 'r', encoding='utf-8') as fd:
                     data += [row[1:] for row in csv.reader(fd)]
             else:
@@ -127,7 +130,7 @@ class PairedDataset:
 
 
 #%%
-if pretraining:
+if args.pretraining:
     dataset = PairedDataset.loads('./data/train.csv', './data/dev.csv')
 else:
     dataset = PairedDataset.loads('./data/kor2en_all.csv',)
@@ -144,7 +147,7 @@ class TokenizeDataset:
         self.dec_tokenizer = dec_tokenizer
     
     def __getitem__(self, index: int):
-        trg, src = self.dataset[index]
+        src, trg = self.dataset[index]
         input = self.enc_tokenizer(src, return_attention_mask=False, return_token_type_ids=False, truncation = True, max_length = 512)
         input['labels'] = self.dec_tokenizer(trg, return_attention_mask=False)['input_ids']
 
@@ -205,8 +208,8 @@ torch.cuda.empty_cache()
 
 # %%
 trainer.train()
-
 model.save_pretrained(f"checkpoints/{args.NAME}")
+
 
 
 #%%
@@ -216,7 +219,7 @@ wandb.finish()
 #%%
 model = EncoderDecoderModel.from_pretrained(f'./checkpoints/{args.NAME}')
 
-input_prompt  = 'let it go let it go'
+input_prompt  = '집 가고 싶다'
 input_ids = enc_tokenizer.encode(input_prompt, return_tensors='pt')
 print(100 * '=' + "\nInput:")
 print(input_prompt)
