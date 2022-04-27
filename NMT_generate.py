@@ -7,6 +7,8 @@ from lib.tokenization_kobert import KoBertTokenizer
 from transformers import (
     EncoderDecoderModel,
     GPT2Tokenizer as BaseGPT2Tokenizer,
+    DistilBertTokenizer,
+    PreTrainedTokenizerFast as BasekoGPT2Tokenizer,
 )
 
 
@@ -16,22 +18,30 @@ args = edict({
                             'decoder': 'distilgpt2'},
               })
 
-
-#%%
-class GPT2Tokenizer(BaseGPT2Tokenizer):
-    def build_inputs_with_special_tokens(self, token_ids: List[int], _) -> List[int]:
-        return token_ids + [self.eos_token_id]
+iskor2en = False
 
 
 #%%
-enc_tokenizer = KoBertTokenizer.from_pretrained(args.model_path.encoder)
-dec_tokenizer = GPT2Tokenizer.from_pretrained(args.model_path.decoder)
+if iskor2en:
+    class GPT2Tokenizer(BaseGPT2Tokenizer):
+        def build_inputs_with_special_tokens(self, token_ids: List[int], _) -> List[int]:
+            return token_ids + [self.eos_token_id]
+    enc_tokenizer = KoBertTokenizer.from_pretrained('monologg/kobert')
+    dec_tokenizer = GPT2Tokenizer.from_pretrained('distilgpt2')
+    model = EncoderDecoderModel.from_pretrained(f'./checkpoints/kobert_gpt2_ep15_lr0.0001_384_fine')
+else:
+    class PreTrainedTokenizerFast(BasekoGPT2Tokenizer):
+        def build_inputs_with_special_tokens(self, token_ids: List[int], _) -> List[int]:
+            return token_ids + [self.eos_token_id]
+    enc_tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+    dec_tokenizer = PreTrainedTokenizerFast.from_pretrained('skt/kogpt2-base-v2', bos_token='</s>', eos_token='</s>', unk_token='<unk>', pad_token='<pad>', mask_token='<mask>')
+    # model = EncoderDecoderModel.from_pretrained(f'./checkpoints/bert_kogpt2_ep10_lr0.0001_611_pre')
+    model = EncoderDecoderModel.from_pretrained(f'./checkpoints/bert_kogpt2_ep15_lr0.0001_304_fine')
 
 
 #%%
-model = EncoderDecoderModel.from_pretrained(f'./checkpoints/kobert_gpt2_ep15_lr0.0001_384_fine')
 
-input_prompt  = '허세와는 거리가 멀어'
+input_prompt  = "I am feelings is this real or just another wishing well you got my temperature arising everytime you hold me in your arms tell me con you feel me burning as you get me closer everytime is this true love that I've been missing is this real or just another passing"
 input_ids = enc_tokenizer.encode(input_prompt, return_tensors='pt')
 print(100 * '=' + "\nInput:")
 print(input_prompt)
