@@ -106,11 +106,11 @@ class PairedDataset:
     def loads(cls, *file_names):
         data = []
         for file_name in file_names:
-            if args.pretraining:
-                with open(file_name, 'r', encoding='utf-8') as fd:
-                    data += [row[1:] for row in csv.reader(fd)]
-            else:
+            try:
                 with open(file_name, 'r', encoding='cp949') as fd:
+                    data += [row[1:] for row in csv.reader(fd)]
+            except:
+                with open(file_name, 'r', encoding='utf-8') as fd:
                     data += [row[1:] for row in csv.reader(fd)]
         
         return cls(data)
