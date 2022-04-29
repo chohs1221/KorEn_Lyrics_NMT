@@ -83,13 +83,13 @@ class PairedDataset:
     def loads(cls, *file_names):
         data = []
         for file_name in file_names:
-            if args.pretraining:
-                with open(file_name, 'r', encoding='utf-8') as fd:
-                    data += [row[1:] for row in csv.reader(fd)]
-            else:
+            try:
                 with open(file_name, 'r', encoding='cp949') as fd:
                     data += [row[1:] for row in csv.reader(fd)]
-        
+            except:
+                with open(file_name, 'r', encoding='utf-8') as fd:
+                    data += [row[1:] for row in csv.reader(fd)]
+
         return cls(data)
     
     @classmethod
@@ -111,7 +111,7 @@ class PairedDataset:
 if args.pretraining:
     dataset = PairedDataset.loads('./data/train.csv', './data/dev.csv')
 else:
-    dataset = PairedDataset.loads('./data/kor2en_all.csv',)
+    dataset = PairedDataset.loads('./data/kor2en_train.csv', './data/bt_data.csv')
 train_dataset_, valid_dataset_ = PairedDataset.split(dataset)
 # print(train_dataset_[0])
 # print(valid_dataset_[0])
