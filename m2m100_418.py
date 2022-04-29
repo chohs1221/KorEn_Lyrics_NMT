@@ -26,7 +26,7 @@ from transformers import(
 args = edict({'w_project': 'test_project',
               'w_entity': 'chohs1221',
               'pretraining': False,
-              'lang': 'en2kor',
+              'lang': 'kor2en',
               'learning_rate': 1e-4,
               'batch_size': {'train': 2,
                              'eval': 4,},
@@ -37,9 +37,9 @@ args = edict({'w_project': 'test_project',
               })
 
 if args.pretraining:
-    args['NAME'] = f'm2m100_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}_pre'
+    args['NAME'] = f'm2m100_kor2en_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}_pre'
 else:
-    args['NAME'] = f'm2m100_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}_fine'
+    args['NAME'] = f'm2m100_kor2en_ep{args.epochs}_lr{args.learning_rate}_{random.randrange(100, 1000)}_fine'
 print(args.NAME)
 
 
