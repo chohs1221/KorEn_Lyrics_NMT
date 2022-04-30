@@ -26,7 +26,7 @@ from transformers import(
 args = edict({'w_project': 'test_project',
               'w_entity': 'chohs1221',
               'pretraining': False,
-              'lang': 'kor2en',
+              'lang': 'en2kor',
               'learning_rate': 1e-4,
               'batch_size': {'train': 2,
                              'eval': 4,},
