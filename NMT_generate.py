@@ -36,7 +36,7 @@ else:
     enc_tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
     dec_tokenizer = PreTrainedTokenizerFast.from_pretrained('skt/kogpt2-base-v2', bos_token='</s>', eos_token='</s>', unk_token='<unk>', pad_token='<pad>', mask_token='<mask>')
     # model = EncoderDecoderModel.from_pretrained(f'./checkpoints/bert_kogpt2_ep10_lr0.0001_611_pre')
-    model = EncoderDecoderModel.from_pretrained(f'./checkpoints/bert_kogpt2_ep15_lr0.0001_304_fine')
+    model = EncoderDecoderModel.from_pretrained(f'./checkpoints/bert_kogpt2_ep15_lr0.0001_692_fine2')
 
 
 #%%
@@ -46,9 +46,9 @@ input_ids = enc_tokenizer.encode(input_prompt, return_tensors='pt')
 print(100 * '=' + "\nInput:")
 print(input_prompt)
 outputs = model.generate(input_ids,
-                        num_beams=5,
-                        num_return_sequences=5,
-                        max_length=50,
+                        # num_beams=5,
+                        # num_return_sequences=5,
+                        max_length=512,
                         no_repeat_ngram_size = 2)
 print(50 * '- ' + "\nOutput:")
 for i, output in enumerate(outputs):

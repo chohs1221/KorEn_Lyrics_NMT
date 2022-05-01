@@ -67,7 +67,7 @@ cnt = 0
 for i in range(len(predictions)):
     cnt += 1
     temp = sentence_bleu(references[i], predictions[i], weights=(0.25, 0.25, 0.25, 0.25))
-    print(temp)
+    # print(temp)
     score += temp
 score /= cnt
 print('-'*100)
@@ -86,14 +86,22 @@ cnt = 0
 for i in range(len(google_predictions)):
     cnt += 1
     temp = sentence_bleu(references[i], google_predictions[i],weights=(0.25, 0.25, 0.25, 0.25))
-    print(temp)
+    # print(temp)
     score += temp
 score /= cnt
 print('-'*100)
 print(f'Google Bleu Score: {score}')
 print('-'*100)
 
+with open(f'prediction_bert_kogpt2.csv', 'w') as fd:
+    writer = csv.writer(fd)
 
+    writer.writerows(predictions)
+
+with open(f'g_prediction_bert_kogpt2.csv', 'w') as fd:
+    writer = csv.writer(fd)
+
+    writer.writerows(google_predictions)
 
 
 
